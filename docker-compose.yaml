@@ -1,0 +1,46 @@
+version: '3'
+services:
+  mongodb:
+    container_name: mongodb
+    image: mongo
+    # environment:
+    # - MONGO_INITDB_ROOT_USERNAME=admin
+    # - MONGO_INITDB_ROOT_PASSWORD=password
+    ports:
+      - 27017:27017
+    volumes:
+      - type: volume
+        source: mongo-volumes
+        target: /data/db
+        volume:
+          nocopy: true
+    networks:
+      - mynetwork
+  nats:
+    container_name: nats
+    image: nats:latest
+    command:
+      [
+        '-js', # 啟用 JetStream 功能
+        '-DV', # 啟用詳細日誌
+        '--addr=0.0.0.0', # 監聽所有網路介面
+        '--port=4222', # NATS 服務器的默認端口
+        '--m=8222', # JetStream HTTP 管理接口的端口
+        '-c', # 指定選擇設定檔
+        '/nats-server.conf' # 指定容器中 /nats-server.conf 檔案當設定檔使用
+      ]
+    ports:
+      - '4222:4222' # 將 NATS 服務器的 4222 端口映射到主機的 4222 端口
+      - '8222:8222' # 將 JetStream HTTP 管理接口的 8222 端口映射到主機的 8222 端口
+      - '8080:8080' # WebSocket 伺服器端口
+    volumes:
+      - type: bind
+        source: $PWD/nats.conf/nats-server.conf # 本地資料夾配置檔位置
+        target: /nats-server.conf # 容器中配置檔的位置
+
+volumes:
+  mongo-volumes:
+
+    # 定義自定義網絡 mynetwork
+networks:
+  mynetwork:
